@@ -1,24 +1,13 @@
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+
+import ENV from "../config.js";
 
 async function connect() {
-  let myPromise = new Promise(async function (myResolve, myReject) {
-    console.log("before MongoMemoryServer create");
-    let mongo = await MongoMemoryServer.create();
-    if (mongo) {
-      myResolve(mongo);
-    } else {
-      myReject(mongo);
-    }
-  });
-  myPromise
-    .then(async function (mongo) {
-      console.log(mongo);
-      await mongo.stop();
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
+  mongoose.set("strictQuery", true);
+  // const db = await mongoose.connect(getUri);
+  const db = await mongoose.connect(ENV.ATLAS_URI);
+  console.log("Database Connected");
+  return db;
 }
 
 export default connect;
