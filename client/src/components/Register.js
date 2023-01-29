@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import avatar from "../assets/profile.png";
-import styles from "../style/Username.module.css";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useFormik } from "formik";
 import { registerValidation } from "../helper/validate";
 import convertToBase64 from "../helper/convert";
-function Register() {
-  const [file, setFile] = useState("");
+import { registerUser } from "../helper/helper";
+
+import styles from "../style/Username.module.css";
+
+export default function Register() {
+  const navigate = useNavigate();
+  const [file, setFile] = useState();
 
   const formik = useFormik({
     initialValues: {
@@ -20,7 +24,16 @@ function Register() {
     validateOnChange: false,
     onSubmit: async (values) => {
       values = await Object.assign(values, { profile: file || "" });
-      console.log(values);
+      let registerPromise = registerUser(values);
+      toast.promise(registerPromise, {
+        loading: "Creating...",
+        success: <b>Register Successfully...!</b>,
+        error: <b>Could not Register.</b>,
+      });
+
+      registerPromise.then(function () {
+        navigate("/");
+      });
     },
   });
 
@@ -31,10 +44,10 @@ function Register() {
   };
 
   return (
-    <div className="container mx-auto py-5">
+    <div className="container mx-auto">
       <Toaster position="top-center" reverseOrder={false}></Toaster>
 
-      <div className="flex justify-center items-center ">
+      <div className="flex justify-center items-center h-screen">
         <div
           className={styles.glass}
           style={{ width: "45%", paddingTop: "3em" }}
@@ -45,6 +58,7 @@ function Register() {
               Happy to join you!
             </span>
           </div>
+
           <form className="py-1" onSubmit={formik.handleSubmit}>
             <div className="profile flex justify-center py-4">
               <label htmlFor="profile">
@@ -101,5 +115,3 @@ function Register() {
     </div>
   );
 }
-
-export default Register;

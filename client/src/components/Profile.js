@@ -1,29 +1,44 @@
 import React, { useState } from "react";
 import avatar from "../assets/profile.png";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useFormik } from "formik";
 import { profileValidation } from "../helper/validate";
 import convertToBase64 from "../helper/convert";
+import useFetch from "../hooks/fetch.hook";
+import { updateUser } from "../helper/helper";
+import { useNavigate } from "react-router-dom";
 
 import styles from "../style/Username.module.css";
 import extend from "../style/Profile.module.css";
-function Profile() {
-  const [file, setFile] = useState("");
+
+export default function Profile() {
+  const [file, setFile] = useState();
+  const [{ isLoading, apiData, serverError }] = useFetch();
+  const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      mobile: "",
-      address: "",
+      firstName: apiData?.firstName || "",
+      lastName: apiData?.lastName || "",
+      email: apiData?.email || "",
+      mobile: apiData?.mobile || "",
+      address: apiData?.address || "",
     },
+    enableReinitialize: true,
     validate: profileValidation,
     validateOnBlur: false,
     validateOnChange: false,
     onSubmit: async (values) => {
-      values = await Object.assign(values, { profile: file || "" });
-      console.log(values);
+      values = await Object.assign(values, {
+        profile: file || apiData?.profile || "",
+      });
+      let updatePromise = updateUser(values);
+
+      toast.promise(updatePromise, {
+        loading: "Updating...",
+        success: <b>Update Successfully...!</b>,
+        error: <b>Could not Update!</b>,
+      });
     },
   });
 
@@ -33,33 +48,43 @@ function Profile() {
     setFile(base64);
   };
 
+  // logout handler function
+  function userLogout() {
+    localStorage.removeItem("token");
+    navigate("/");
+  }
+
+  if (isLoading) return <h1 className="text-2xl font-bold">isLoading</h1>;
+  if (serverError)
+    return <h1 className="text-xl text-red-500">{serverError.message}</h1>;
+
   return (
-    <div className="container mx-auto py-5">
+    <div className="container mx-auto">
       <Toaster position="top-center" reverseOrder={false}></Toaster>
 
-      <div className="flex justify-center items-center ">
+      <div className="flex justify-center items-center h-screen">
         <div
           className={`${styles.glass} ${extend.glass}`}
           style={{ width: "45%", paddingTop: "3em" }}
         >
           <div className="title flex flex-col items-center">
-            <h4 className="text-5xl font-bold">Register</h4>
+            <h4 className="text-5xl font-bold">Profile</h4>
             <span className="py-4 text-xl w-2/3 text-center text-gray-500">
-              Happy to join you!
+              You can update the details.
             </span>
           </div>
+
           <form className="py-1" onSubmit={formik.handleSubmit}>
             <div className="profile flex justify-center py-4">
               <label htmlFor="profile">
                 <img
-                  src={file || avatar}
+                  src={apiData?.profile || file || avatar}
                   className={`${styles.profile_img} ${extend.profile_img}`}
                   alt="avatar"
                 />
               </label>
 
               <input
-                className={`${styles.textbox} ${extend.textbox}`}
                 onChange={onUpload}
                 type="file"
                 id="profile"
@@ -70,14 +95,14 @@ function Profile() {
             <div className="textbox flex flex-col items-center gap-6">
               <div className="name flex w-3/4 gap-10">
                 <input
-                  className={`${styles.textbox} ${extend.textbox}`}
                   {...formik.getFieldProps("firstName")}
+                  className={`${styles.textbox} ${extend.textbox}`}
                   type="text"
                   placeholder="FirstName"
                 />
                 <input
-                  className={`${styles.textbox} ${extend.textbox}`}
                   {...formik.getFieldProps("lastName")}
+                  className={`${styles.textbox} ${extend.textbox}`}
                   type="text"
                   placeholder="LastName"
                 />
@@ -85,22 +110,22 @@ function Profile() {
 
               <div className="name flex w-3/4 gap-10">
                 <input
-                  className={`${styles.textbox} ${extend.textbox}`}
                   {...formik.getFieldProps("mobile")}
+                  className={`${styles.textbox} ${extend.textbox}`}
                   type="text"
                   placeholder="Mobile No."
                 />
                 <input
-                  className={`${styles.textbox} ${extend.textbox}`}
                   {...formik.getFieldProps("email")}
+                  className={`${styles.textbox} ${extend.textbox}`}
                   type="text"
                   placeholder="Email*"
                 />
               </div>
 
               <input
-                className={`${styles.textbox} ${extend.textbox}`}
                 {...formik.getFieldProps("address")}
+                className={`${styles.textbox} ${extend.textbox}`}
                 type="text"
                 placeholder="Address"
               />
@@ -112,7 +137,7 @@ function Profile() {
             <div className="text-center py-4">
               <span className="text-gray-500">
                 come back later?{" "}
-                <button className="text-red-500" to="/">
+                <button onClick={userLogout} className="text-red-500" to="/">
                   Logout
                 </button>
               </span>
@@ -123,5 +148,3 @@ function Profile() {
     </div>
   );
 }
-
-export default Profile;
